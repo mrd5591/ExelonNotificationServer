@@ -11,7 +11,7 @@ import com.google.appengine.repackaged.com.google.gson.JsonObject;
 import com.google.appengine.repackaged.com.google.gson.reflect.TypeToken;
 
 @Path("/authenticate")
-public class AuthenticationEndpoint extends HttpServlet
+public class AuthenticationEndpoint
 {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
