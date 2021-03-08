@@ -22,9 +22,11 @@ public class AuthenticationEndpoint
         if(params == null)
             return Response.status(400).build();
 
-        String employeeId = params.get("employeeId");
-        String phoneNumber = params.get("phoneNumber");
-        String name = params.get("name");
+        String exelonId = params.get("exelonId");
+        String email = params.get("email");
+        String firstName = params.get("firstName");
+        String lastName = params.get("lastName");
+        String os = params.get("os");
         String password = params.get("password");
 
         JsonObject jsonResp = new JsonObject();
@@ -32,19 +34,22 @@ public class AuthenticationEndpoint
         boolean result = false;
         String resultMessage = "";
         boolean error = false;
-        if(employeeId != null && phoneNumber != null && name != null && password != null) {
-            if(!employeeId.matches("[0-9]+")) {
+        if(exelonId != null && email != null && firstName != null && lastName != null && os != null && password != null) {
+            if(!exelonId.matches("[0-9]+") || exelonId.length() != 6) {
                 error = true;
-                resultMessage = "The employee ID must only contain numbers!";
-            } else if(!phoneNumber.matches("[0-9]+") || phoneNumber.length() != 10) {
-                error = true;
-                resultMessage = "The phone number must contain 10 numbers!";
-            } else if(!name.matches("/^[a-z ,.'-]+$/i") || name.length() < 5) {
+                resultMessage = "The employee ID format is incorrect! It must be 6 numbers.";
+            } else if(!firstName.matches("/^[a-z ,.'-]+$/i") || firstName.length() < 2) {
                 error = true;
                 resultMessage = "This name is invalid!";
-            } else if(password.length() < 8) {
+            } else if(!lastName.matches("/^[a-z ,.'-]+$/i") || lastName.length() < 2) {
                 error = true;
-                resultMessage = "The password must contain at least 8 characters!";
+                resultMessage = "This name is invalid!";
+            } else if(!Util.passwordIsValid(password)) {
+                error = true;
+                resultMessage = "The password is invalid!";
+            } else if(!Util.emailIsValid(email)) {
+                error = true;
+                resultMessage = "The email is invalid!";
             } else {
                 password = SCryptUtil.scrypt(password, 16384, 8, 1);
                 //everything is good
