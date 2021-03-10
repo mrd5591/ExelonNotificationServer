@@ -4,11 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="01b22cfc-8314-49da-b28d-c11341e7f4f1" name="Default Changelist" comment="ConfirmationEndpoint added">
-      <change afterPath="$PROJECT_DIR$/src/main/java/OperatingSystem.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/Util.java" afterDir="false" />
+    <list default="true" id="01b22cfc-8314-49da-b28d-c11341e7f4f1" name="Default Changelist" comment="Authentication endpoint features added">
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_microsoft_sqlserver_mssql_jdbc_9_2_1_jre11.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__javax_servlet_servlet_api_2_5.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/DatabaseFunctions.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/AuthenticationEndpoint.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/AuthenticationEndpoint.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ExelonNotificationServer.iml" beforeDir="false" afterPath="$PROJECT_DIR$/ExelonNotificationServer.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -158,7 +160,14 @@
       <option name="project" value="LOCAL" />
       <updated>1614283565263</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Authentication endpoint features added">
+      <created>1615216384567</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1615216384567</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -178,6 +187,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="ConfirmationEndpoint added" />
-    <option name="LAST_COMMIT_MESSAGE" value="ConfirmationEndpoint added" />
+    <MESSAGE value="Authentication endpoint features added" />
+    <option name="LAST_COMMIT_MESSAGE" value="Authentication endpoint features added" />
   </component>
 </project>
