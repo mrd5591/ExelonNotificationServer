@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.eatthepath:pushy:0.14.2">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/eatthepath/pushy/0.14.2/pushy-0.14.2.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/eatthepath/pushy/0.14.2/pushy-0.14.2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/eatthepath/pushy/0.14.2/pushy-0.14.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

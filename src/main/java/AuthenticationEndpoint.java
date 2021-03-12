@@ -4,6 +4,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
+
 import com.lambdaworks.crypto.SCryptUtil;
 
 import com.google.appengine.repackaged.com.google.gson.Gson;
@@ -32,35 +34,45 @@ public class AuthenticationEndpoint
         JsonObject jsonResp = new JsonObject();
 
         boolean result = false;
-        String resultMessage = "";
+        String errorMessage = "";
         boolean error = false;
         if(exelonId != null && email != null && firstName != null && lastName != null && os != null && password != null) {
             if(!exelonId.matches("[0-9]+") || exelonId.length() != 6) {
                 error = true;
-                resultMessage = "The employee ID format is incorrect! It must be 6 numbers.";
+                errorMessage = "The employee ID format is incorrect! It must be 6 numbers.";
             } else if(!firstName.matches("/^[a-z ,.'-]+$/i") || firstName.length() < 2) {
                 error = true;
-                resultMessage = "This name is invalid!";
+                errorMessage = "This name is invalid!";
             } else if(!lastName.matches("/^[a-z ,.'-]+$/i") || lastName.length() < 2) {
                 error = true;
-                resultMessage = "This name is invalid!";
+                errorMessage = "This name is invalid!";
             } else if(!Util.passwordIsValid(password)) {
                 error = true;
-                resultMessage = "The password is invalid!";
+                errorMessage = "The password is invalid!";
             } else if(!Util.emailIsValid(email)) {
                 error = true;
-                resultMessage = "The email is invalid!";
+                errorMessage = "The email is invalid!";
+            } else if(!OperatingSystem.Android.name().equals(os) && !OperatingSystem.iOS.name().equals(os)) {
+                error = true;
+                errorMessage = "The operating system is invalid";
             } else {
                 password = SCryptUtil.scrypt(password, 16384, 8, 1);
-                //everything is good
 
-                result = true;
+                Map<String, String> signUpParams = new HashMap<>();
+                signUpParams.put("firstName", firstName);
+                signUpParams.put("lastName", lastName);
+                signUpParams.put("exelonId", exelonId);
+                signUpParams.put("os", os);
+                signUpParams.put("email", email);
+                signUpParams.put("password", password);
+
+                result = DatabaseConnection.SignUp(signUpParams);
             }
         }
 
         if(error) {
             jsonResp.addProperty("error", true);
-            jsonResp.addProperty("errorMessage", resultMessage);
+            jsonResp.addProperty("errorMessage", errorMessage);
         } else {
             jsonResp.addProperty("result", result);
         }
@@ -77,16 +89,17 @@ public class AuthenticationEndpoint
         if(params == null)
             return Response.status(400).build();
 
-        String phoneNumber = params.get("phoneNumber");
+        String exelonId = params.get("exelonId");
         String password = params.get("password");
 
         JsonObject jsonResp = new JsonObject();
 
         boolean result = false;
-        if(phoneNumber != null && password != null) {
+        if(exelonId != null && password != null && Util.isInteger(exelonId)) {
             password = SCryptUtil.scrypt(password, 16384, 8, 1);
+            int id = Integer.parseInt(exelonId);
 
-            result = true;
+            result = DatabaseConnection.Login(id, password);
         }
 
         jsonResp.addProperty("result", result);
