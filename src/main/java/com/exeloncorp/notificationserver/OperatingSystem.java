@@ -1,3 +1,5 @@
+package com.exeloncorp.notificationserver;
+
 public enum OperatingSystem {
     Android,
     iOS,

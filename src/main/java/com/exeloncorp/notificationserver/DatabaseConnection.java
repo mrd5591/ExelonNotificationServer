@@ -1,12 +1,21 @@
+package com.exeloncorp.notificationserver;
+
 import java.sql.*;
 import java.util.Map;
 
 public class DatabaseConnection {
-    private static final String connectionUrl = "jdbc:virmire.database.windows.net;" +
-            "databaseName=Notification Database;user=VirmireAdmin;password=GrandHat132;";
+    private static final String connectionUrl = "jdbc:sqlserver://palaven.database.windows.net:1433;" +
+            "databaseName=NotificationsDatabase;user=PalavenAdmin@palaven;password=GrandHat132;encrypt=true";
 
     public static boolean SignUp(Map<String, String> params) {
-        if(CheckAccountExists(Integer.parseInt(params.get("exelonId")))) {
+        try {
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return true;
+        }
+
+        if(CheckAccountExists(params.get("exelonId"))) {
             return false;
         }
 
@@ -15,7 +24,7 @@ public class DatabaseConnection {
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, params.get("firstName"));
             statement.setString(2, params.get("lastName"));
-            statement.setInt(3, Integer.parseInt(params.get("exelonId")));
+            statement.setString(3, params.get("exelonId"));
             statement.setString(4, params.get("os"));
             statement.setString(5, params.get("email"));
             statement.setString(6, params.get("password"));
@@ -29,11 +38,11 @@ public class DatabaseConnection {
         }
     }
 
-    public static boolean CheckAccountExists(int exelonId){
+    public static boolean CheckAccountExists(String exelonId){
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
             String sql = "SELECT 1 FROM users WHERE exelon_id = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setInt(1, exelonId);
+            statement.setString(1, exelonId);
             ResultSet rs = statement.executeQuery();
 
             return rs.next();

@@ -1,5 +1,6 @@
+package com.exeloncorp.notificationserver;
+
 import java.io.IOException;
-import java.net.Authenticator;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -57,7 +58,10 @@ public class EverbridgePoller
             }
 
             if(!notificationNames.isEmpty()) {
-                //send push notification
+                for(String notification : notificationNames) {
+                    MobileNotificationService.SendAPN(notification);
+                    MobileNotificationService.SendFCM(notification);
+                }
             }
         }
     }

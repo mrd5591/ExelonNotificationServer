@@ -1,3 +1,5 @@
+package com.exeloncorp.notificationserver;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -6,18 +8,12 @@ public class Util {
             Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
 
     public static boolean passwordIsValid(String password) {
-        //password must be between 8 and 15 chars
-        if(password.length() < 8 || password.length() > 15)
-            return false;
 
         //password must start with letter
         if(!password.matches("^[A-z].*$"))
             return false;
 
-        if(!password.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$"))
-            return false;
-
-        return true;
+        return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,15}$");
     }
 
     public static boolean emailIsValid(String email) {

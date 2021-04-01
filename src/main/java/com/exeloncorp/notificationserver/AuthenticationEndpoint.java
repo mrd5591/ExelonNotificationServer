@@ -1,5 +1,6 @@
+package com.exeloncorp.notificationserver;
+
 import javax.ws.rs.*;
-import javax.servlet.http.HttpServlet;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Date;
@@ -26,9 +27,8 @@ public class AuthenticationEndpoint
 
         String exelonId = params.get("exelonId");
         String email = params.get("email");
-        String firstName = params.get("firstName");
-        String lastName = params.get("lastName");
-        String os = params.get("os");
+        String firstName = params.get("firstName").toUpperCase();
+        String lastName = params.get("lastName").toUpperCase();
         String password = params.get("password");
 
         JsonObject jsonResp = new JsonObject();
@@ -36,14 +36,14 @@ public class AuthenticationEndpoint
         boolean result = false;
         String errorMessage = "";
         boolean error = false;
-        if(exelonId != null && email != null && firstName != null && lastName != null && os != null && password != null) {
+        if(exelonId != null && email != null && firstName != null && lastName != null && password != null) {
             if(!exelonId.matches("[0-9]+") || exelonId.length() != 6) {
                 error = true;
                 errorMessage = "The employee ID format is incorrect! It must be 6 numbers.";
-            } else if(!firstName.matches("/^[a-z ,.'-]+$/i") || firstName.length() < 2) {
+            } else if(!firstName.matches("(?i)(^[a-z])((?![ .,'-]$)[a-z .,'-]){0,24}$")) {
                 error = true;
                 errorMessage = "This name is invalid!";
-            } else if(!lastName.matches("/^[a-z ,.'-]+$/i") || lastName.length() < 2) {
+            } else if(!lastName.matches("(?i)(^[a-z])((?![ .,'-]$)[a-z .,'-]){0,24}$")) {
                 error = true;
                 errorMessage = "This name is invalid!";
             } else if(!Util.passwordIsValid(password)) {
@@ -52,9 +52,6 @@ public class AuthenticationEndpoint
             } else if(!Util.emailIsValid(email)) {
                 error = true;
                 errorMessage = "The email is invalid!";
-            } else if(!OperatingSystem.Android.name().equals(os) && !OperatingSystem.iOS.name().equals(os)) {
-                error = true;
-                errorMessage = "The operating system is invalid";
             } else {
                 password = SCryptUtil.scrypt(password, 16384, 8, 1);
 
@@ -62,7 +59,6 @@ public class AuthenticationEndpoint
                 signUpParams.put("firstName", firstName);
                 signUpParams.put("lastName", lastName);
                 signUpParams.put("exelonId", exelonId);
-                signUpParams.put("os", os);
                 signUpParams.put("email", email);
                 signUpParams.put("password", password);
 
@@ -77,7 +73,7 @@ public class AuthenticationEndpoint
             jsonResp.addProperty("result", result);
         }
 
-        return Response.status(201).expires(new Date(System.currentTimeMillis() + 10000)).type(MediaType.APPLICATION_JSON).entity(jsonResp.toString()).build();
+        return Response.status(200).expires(new Date(System.currentTimeMillis() + 10000)).type(MediaType.APPLICATION_JSON).entity(jsonResp.toString()).build();
     }
 
     @PUT
@@ -91,19 +87,41 @@ public class AuthenticationEndpoint
 
         String exelonId = params.get("exelonId");
         String password = params.get("password");
+        String deviceId = params.get("deviceId");
+        OperatingSystem os;
+        try {
+            os = OperatingSystem.valueOf(params.get("os"));
+        } catch (IllegalArgumentException e) {
+            os = null;
+        }
+
 
         JsonObject jsonResp = new JsonObject();
 
         boolean result = false;
-        if(exelonId != null && password != null && Util.isInteger(exelonId)) {
+        if(exelonId != null && password != null && os != null && deviceId != null && Util.isInteger(exelonId)) {
             password = SCryptUtil.scrypt(password, 16384, 8, 1);
             int id = Integer.parseInt(exelonId);
 
             result = DatabaseConnection.Login(id, password);
+
+            if(result) {
+                if(os == OperatingSystem.iOS) {
+                    MobileNotificationService.RegisteriOS(deviceId);
+                } else if(os == OperatingSystem.Android) {
+                    MobileNotificationService.RegisterAndroid(deviceId);
+                }
+            }
         }
 
         jsonResp.addProperty("result", result);
 
         return Response.status(200).expires(new Date(System.currentTimeMillis() + 10000)).type(MediaType.APPLICATION_JSON).entity(jsonResp.toString()).build();
+    }
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String Get() {
+        return "This works";
     }
 }

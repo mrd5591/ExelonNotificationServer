@@ -1,3 +1,5 @@
+package com.exeloncorp.notificationserver;
+
 import com.google.appengine.repackaged.com.google.gson.Gson;
 import com.google.appengine.repackaged.com.google.gson.JsonObject;
 import com.google.appengine.repackaged.com.google.gson.reflect.TypeToken;
