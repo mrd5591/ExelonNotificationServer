@@ -101,9 +101,8 @@ public class AuthenticationEndpoint
         boolean result = false;
         if(exelonId != null && password != null && os != null && deviceId != null && Util.isInteger(exelonId)) {
             password = SCryptUtil.scrypt(password, 16384, 8, 1);
-            int id = Integer.parseInt(exelonId);
 
-            result = DatabaseConnection.Login(id, password);
+            result = DatabaseConnection.Login(exelonId, password);
 
             if(result) {
                 if(os == OperatingSystem.iOS) {

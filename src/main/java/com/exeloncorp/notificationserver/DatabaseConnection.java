@@ -53,11 +53,11 @@ public class DatabaseConnection {
         }
     }
 
-    public static boolean Login(int exelonId, String password) {
+    public static boolean Login(String exelonId, String password) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
             String sql = "SELECT 1 FROM users WHERE exelon_id = ? AND pword = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setInt(1, exelonId);
+            statement.setString(1, exelonId);
             statement.setString(2, password);
             ResultSet rs = statement.executeQuery();
 
@@ -67,5 +67,30 @@ public class DatabaseConnection {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public static ResultSet GetAccountHistory(String exelonId, String token) {
+        try (Connection connection = DriverManager.getConnection(connectionUrl);) {
+            String sql = "SELECT 1 FROM users WHERE exelon_id = ? AND token = ?";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, exelonId);
+            statement.setString(2, token);
+            ResultSet rs = statement.executeQuery();
+
+            if(rs.next()) {
+                sql = "SELECT * FROM notifications WHERE exelon_id = ?";
+                statement = connection.prepareStatement(sql);
+                statement.setString(1, exelonId);
+                rs = statement.executeQuery();
+
+                return rs;
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        return null;
     }
 }
