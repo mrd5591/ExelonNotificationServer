@@ -12,7 +12,7 @@ import com.lambdaworks.crypto.SCryptUtil;
 import com.google.appengine.repackaged.com.google.gson.Gson;
 import com.google.appengine.repackaged.com.google.gson.JsonObject;
 import com.google.appengine.repackaged.com.google.gson.reflect.TypeToken;
-
+// This is a change
 @Path("/authenticate")
 public class AuthenticationEndpoint
 {
