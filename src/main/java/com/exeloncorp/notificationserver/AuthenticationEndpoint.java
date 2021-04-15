@@ -35,23 +35,29 @@ public class AuthenticationEndpoint
 
         boolean result = false;
         String errorMessage = "";
+        int errorNum = -1;
         boolean error = false;
         if(exelonId != null && email != null && firstName != null && lastName != null && password != null) {
             if(!exelonId.matches("[0-9]+") || exelonId.length() != 6) {
                 error = true;
                 errorMessage = "The employee ID format is incorrect! It must be 6 numbers.";
+                errorNum = 0;
             } else if(!firstName.matches("(?i)(^[a-z])((?![ .,'-]$)[a-z .,'-]){0,24}$")) {
                 error = true;
                 errorMessage = "This name is invalid!";
+                errorNum = 1;
             } else if(!lastName.matches("(?i)(^[a-z])((?![ .,'-]$)[a-z .,'-]){0,24}$")) {
                 error = true;
                 errorMessage = "This name is invalid!";
+                errorNum = 2;
             } else if(!Util.passwordIsValid(password)) {
                 error = true;
                 errorMessage = "The password is invalid!";
+                errorNum = 3;
             } else if(!Util.emailIsValid(email)) {
                 error = true;
                 errorMessage = "The email is invalid!";
+                errorNum = 4;
             } else {
                 password = SCryptUtil.scrypt(password, 16384, 8, 1);
 
@@ -66,11 +72,19 @@ public class AuthenticationEndpoint
             }
         }
 
+        if(!result) {
+            errorNum = 5;
+            error = true;
+            errorMessage = "There was an unexpected server error. Please try again.";
+        }
+
+
         if(error) {
             jsonResp.addProperty("error", true);
             jsonResp.addProperty("errorMessage", errorMessage);
+            jsonResp.addProperty("errorNum", errorNum);
         } else {
-            jsonResp.addProperty("result", result);
+            jsonResp.addProperty("result", true);
         }
 
         return Response.status(200).expires(new Date(System.currentTimeMillis() + 10000)).type(MediaType.APPLICATION_JSON).entity(jsonResp.toString()).build();

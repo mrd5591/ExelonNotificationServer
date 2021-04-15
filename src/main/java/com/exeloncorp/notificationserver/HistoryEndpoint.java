@@ -26,12 +26,15 @@ public class HistoryEndpoint {
 
                 while(true) {
                     try {
-                        if (!rs.next()) {
+                        if (rs.next()) {
                             JsonObject obj = new JsonObject();
                             obj.addProperty("notificationId", rs.getString("EB_n_id"));
                             obj.addProperty("message", rs.getString("msg"));
                             obj.addProperty("timestamp", rs.getString("t_stamp"));
+                            obj.addProperty("confirm", rs.getByte("resp_outstanding"));
                             arr.add(obj);
+                        } else {
+                            break;
                         }
                     } catch (SQLException throwables) {
                         throwables.printStackTrace();
