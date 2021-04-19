@@ -1,9 +1,8 @@
 package com.exeloncorp.notificationserver;
 
-import com.google.appengine.repackaged.org.joda.time.DateTime;
-
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +23,7 @@ public class DatabaseConnection {
             return false;
         }
 
-        try (Connection connection = DriverManager.getConnection(connectionUrl);) {
+        try (Connection connection = DriverManager.getConnection(connectionUrl)) {
             String sql = "INSERT INTO users (fname, lname, exelon_id, method, email, pword) values (?, ?, ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, params.get("firstName"));
@@ -99,14 +98,53 @@ public class DatabaseConnection {
         return null;
     }
 
-    public static ResultSet GetActiveNotifications(String notificationId) {
+    public static EverbridgeNotification GetActiveNotifications(String notificationId) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
-            String sql = "SELECT * FROM notifications WHERE EB_n_id = ? AND resp_outstanding = 1";
+            String sql = "SELECT * FROM notifications WHERE EB_n_id = ? AND resp_outstanding != 0";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, notificationId);
             ResultSet rs = statement.executeQuery();
 
-            return rs;
+            EverbridgeNotification notification = null;
+            List<String> exelonIds = new ArrayList<>();
+            while(rs.next()) {
+                if(rs.getByte("resp_outstanding") != 0) {
+                    exelonIds.add(rs.getString("exelon_id"));
+                }
+
+                if(notification == null)
+                    notification = new EverbridgeNotification(notificationId, rs.getString("msg"), rs.getLong("t_stamp"));
+            }
+
+            notification.SetExelonIds(exelonIds);
+            notification.SetDeviceIds(GetUserOS(exelonIds));
+
+            return notification;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static Map<String, OperatingSystem> GetUserOS(List<String> exelonIds) {
+        Map<String, OperatingSystem> deviceIds = new HashMap<>();
+        try (Connection connection = DriverManager.getConnection(connectionUrl)) {
+            String ids = "?,".repeat(exelonIds.size());
+            ids = ids.substring(0, ids.length()-1);
+            String sql = "SELECT * FROM users WHERE exelon_id IN " + ids;
+            PreparedStatement statement = connection.prepareStatement(sql);
+            for(int i = 0; i < exelonIds.size(); i++) {
+                statement.setString(i + 1, exelonIds.get(i));
+            }
+
+            ResultSet rs = statement.executeQuery();
+
+            while(rs.next()) {
+                deviceIds.put(rs.getString("exelon_id"), rs.getByte("os") == 1 ? OperatingSystem.Android : OperatingSystem.iOS);
+            }
+
+            return deviceIds;
         }
         catch (SQLException e) {
             e.printStackTrace();
@@ -129,38 +167,33 @@ public class DatabaseConnection {
         }
     }
 
-    public static List<String> GetUsers(String notificationId) {
-        List<String> users = new ArrayList<>();
-
+    public static String GetUserFromToken(String token) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
-            String sql = "SELECT * FROM notifications WHERE EB_n_id = " + notificationId;
+            String sql = "SELECT 1 FROM users WHERE login_token = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
-
+            statement.setString(1, token);
             ResultSet rs = statement.executeQuery();
 
-            while(rs.next()) {
-                users.add(rs.getString("exelon_id"));
-            }
-
-            return users;
+            return rs.getString("exelon_id");
         }
         catch (SQLException e) {
             e.printStackTrace();
-            return users;
+            return null;
         }
     }
 
     public static boolean InsertNotification(EverbridgeNotification notification) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
             String notificationId = notification.GetId();
-            String timestamp = notification.GetTimestamp();
+            long timestamp = notification.GetTimestamp();
             String message = notification.GetMessage();
             List<String> exelonIds = notification.GetExelonIds();
 
-            String params = "(" + notificationId + ", " + timestamp + ", ?, " + 1 +", " + message + "),".repeat(exelonIds.size());
+            String params = ("(" + notificationId + ", " + timestamp + ", ?, " + 2 +", '" + message + "'),").repeat(exelonIds.size());
             params = params.substring(0, params.length()-1);
 
-            String sql = "IF NOT EXISTS (SELECT * FROM notifications WHERE EB_n_id = ?) INSERT INTO notifications (EB_n_id, t_stamp, exelon_id, resp_outstanding, msg) VALUES " + params + "";
+            String sql = "IF NOT EXISTS (SELECT * FROM notifications WHERE EB_n_id = ?) INSERT INTO notifications (EB_n_id, t_stamp, exelon_id, resp_outstanding, msg) VALUES " + params;
+            //String sql = "IF NOT EXISTS (SELECT * FROM notifications WHERE EB_n_id = ?) INSERT INTO notifications (EB_n_id, t_stamp, exelon_id, resp_outstanding, msg) VALUES (1, 1, 123456, 2, \'test\')";
             PreparedStatement statement = connection.prepareStatement(sql);
 
             statement.setString(1, notificationId);
@@ -170,6 +203,34 @@ public class DatabaseConnection {
             int rows = statement.executeUpdate();
 
             return rows != 0;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean DecrementPNCount(String notificationId) {
+        try (Connection connection = DriverManager.getConnection(connectionUrl);) {
+            String sql = "UPDATE notifications SET resp_outstanding = resp_outstanding - 1 WHERE EB_n_id = " + notificationId;
+            PreparedStatement statement = connection.prepareStatement(sql);
+
+            statement.executeUpdate();
+
+            return true;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean ConfirmNotification(String exelonId, String notificationId) {
+        try (Connection connection = DriverManager.getConnection(connectionUrl);) {
+            String sql = "UPDATE notifications SET resp_outstanding = 0 WHERE EB_n_id = " + notificationId + " AND exelon_id = " + exelonId;
+            PreparedStatement statement = connection.prepareStatement(sql);
+
+            return statement.executeUpdate() == 1;
         }
         catch (SQLException e) {
             e.printStackTrace();

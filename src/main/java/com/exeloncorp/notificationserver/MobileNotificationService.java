@@ -7,7 +7,7 @@ import java.util.Set;
 
 public class MobileNotificationService
 {
-    private static final String connectionString = "sb://psuexelon.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=k/5GsPQ+ROsduyxys0GPSUp1sbSduK2Ph2pdg85q8oU=";
+    private static final String connectionString = "Endpoint=sb://psuexelon.servicebus.windows.net/;SharedAccessKeyName=DefaultFullSharedAccessSignature;SharedAccessKey=k/5GsPQ+ROsduyxys0GPSUp1sbSduK2Ph2pdg85q8oU=";
     private static final String hubName = "ExelonHub";
     private static NotificationHub hub;
     static {

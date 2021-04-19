@@ -5,10 +5,7 @@ import com.google.appengine.repackaged.com.google.gson.JsonObject;
 import com.google.appengine.repackaged.com.google.gson.reflect.TypeToken;
 
 import javax.servlet.http.HttpServlet;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Date;
@@ -20,17 +17,20 @@ public class ConfirmationEndpoint
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response ConfirmNotification(String json) {
+    public Response ConfirmNotification(@HeaderParam("Bearer") String token, String json) {
         HashMap<String, String> params = new Gson().fromJson(json, new TypeToken<HashMap<String, String>>(){}.getType());
 
-        String employeeId = params.get("employeeId");
         String notificiationId = params.get("notificationId");
 
         JsonObject jsonResp = new JsonObject();
 
         boolean result = false;
-        if(employeeId != null && notificiationId != null) {
-            //check database for employeeId and notificationId
+        if(token != null && notificiationId != null) {
+            String exelonId = DatabaseConnection.GetUserFromToken(token);
+
+            if(exelonId != null) {
+                result = DatabaseConnection.ConfirmNotification(exelonId, notificiationId);
+            }
         }
 
         jsonResp.addProperty("result", result);

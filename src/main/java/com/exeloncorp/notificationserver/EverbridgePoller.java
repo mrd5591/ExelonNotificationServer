@@ -5,29 +5,26 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.util.*;
 
+import org.glassfish.jersey.internal.guava.HashMultimap;
+import org.glassfish.jersey.internal.guava.Multimap;
 import org.json.*;
 
 public class EverbridgePoller
 {
-    private static String ExelonOrganizationId = "454514914099365";
-    private static HttpClient EverbridgeClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
+    private final static String ExelonOrganizationId = "454514914099365";
+    private final static HttpClient EverbridgeClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
             .followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
-    private static HttpRequest EverbridgeNotificationRequest = HttpRequest.newBuilder().uri(URI.create("http://api.everbridge.net/rest/incidents/" + ExelonOrganizationId + "?onlyOpen=true&incidentType=All")).header("Authorization", "cHN1ZXhlbG9uY2Fwc3RvbmU6R3JhbmRIYXQxMzI=").GET().build();
-    private static Map<String, Timer> notificationTimers = new HashMap<>();
+    private final static HttpRequest EverbridgeNotificationRequest = HttpRequest.newBuilder().uri(URI.create("http://api.everbridge.net/rest/incidents/" + ExelonOrganizationId + "?onlyOpen=true&incidentType=All")).header("Authorization", "cHN1ZXhlbG9uY2Fwc3RvbmU6R3JhbmRIYXQxMzI=").GET().build();
+    private final static Map<String, Timer> notificationTimers = new HashMap<>();
 
     public static void Poll() {
         HttpResponse<String> response;
         try {
             response = EverbridgeClient.send(EverbridgeNotificationRequest, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             return;
         }
@@ -64,32 +61,31 @@ public class EverbridgePoller
     }
 
     private static void DatabaseSweep(String notificationId) {
-        ResultSet activeNotifications = DatabaseConnection.GetActiveNotifications(notificationId);
-        Set<String> exelonIds = new HashSet<>();
-        String message = null;
+        EverbridgeNotification activeNotification = DatabaseConnection.GetActiveNotifications(notificationId);
+        if(activeNotification == null)
+            return;
 
-        while(true) {
-            try {
-                if (!activeNotifications.next()) break;
+        Multimap<OperatingSystem, String> deviceIds = HashMultimap.create();
 
-                if(activeNotifications.getByte("resp_outstanding") == 1) {
-                    exelonIds.add(activeNotifications.getString("EB_n_id"));
-                }
+        String message = activeNotification.GetMessage();
 
-                if(message == null)
-                    message = activeNotifications.getString("message");
-
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
-        }
-
-        if(exelonIds.isEmpty()) {
+        if(deviceIds.size() == 0) {
             notificationTimers.get(notificationId).cancel();
             notificationTimers.get(notificationId).purge();
         } else {
-            MobileNotificationService.SendAPN(message, exelonIds);
-            MobileNotificationService.SendFCM(message, exelonIds);
+            for(Map.Entry<String, OperatingSystem> entry : activeNotification.GetDeviceIds().entrySet()) {
+                deviceIds.put(entry.getValue(), entry.getKey());
+            }
+
+            for(Map.Entry<OperatingSystem, Collection<String>> entry : deviceIds.asMap().entrySet()) {
+                if(entry.getKey() == OperatingSystem.Android) {
+                    MobileNotificationService.SendFCM(message, new HashSet<>(entry.getValue()));
+                } else if(entry.getKey() == OperatingSystem.iOS) {
+                    MobileNotificationService.SendAPN(message, new HashSet<>(entry.getValue()));
+                }
+            }
+
+            DatabaseConnection.DecrementPNCount(notificationId);
         }
     }
 
@@ -103,16 +99,13 @@ public class EverbridgePoller
                 if(response != null) {
                     JSONObject json = new JSONObject(response.body());
                     String name = json.getJSONObject("result").getJSONObject("message").getString("title");
-                    String ts = json.getJSONObject("result").getJSONObject("message").getString("createdDate");
+                    long ts = json.getJSONObject("result").getJSONObject("message").getLong("createdDate");
 
                     EverbridgeNotification notification = new EverbridgeNotification(notificationId, name, ts);
                     notification.SetExelonIds(GetExternalIds(notificationId));
                     notifications.add(notification);
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return notifications;
-            } catch (IOException e) {
+            } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
                 return notifications;
             }
@@ -133,13 +126,11 @@ public class EverbridgePoller
 
                 for(int i = 0; i < data.length(); i++) {
                     JSONObject user = data.getJSONObject(i);
+
                     externalIds.add(user.getString("externalId"));
                 }
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return externalIds;
-        } catch (IOException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
             return externalIds;
         }
