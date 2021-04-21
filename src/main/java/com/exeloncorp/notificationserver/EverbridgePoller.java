@@ -69,7 +69,7 @@ public class EverbridgePoller
 
         String message = activeNotification.GetMessage();
 
-        if(deviceIds.size() == 0) {
+        if(activeNotification.GetDeviceIds().size() == 0) {
             notificationTimers.get(notificationId).cancel();
             notificationTimers.get(notificationId).purge();
         } else {

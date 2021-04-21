@@ -27,8 +27,8 @@ public class AuthenticationEndpoint
 
         String exelonId = params.get("exelonId");
         String email = params.get("email");
-        String firstName = params.get("firstName").toUpperCase();
-        String lastName = params.get("lastName").toUpperCase();
+        String firstName = params.get("firstName");
+        String lastName = params.get("lastName");
         String password = params.get("password");
 
         JsonObject jsonResp = new JsonObject();
@@ -36,34 +36,28 @@ public class AuthenticationEndpoint
         boolean result = false;
         String errorMessage = "";
         int errorNum = -1;
-        boolean error = false;
         if(exelonId != null && email != null && firstName != null && lastName != null && password != null) {
             if(!exelonId.matches("[0-9]+") || exelonId.length() != 6) {
-                error = true;
                 errorMessage = "The employee ID format is incorrect! It must be 6 numbers.";
                 errorNum = 0;
             } else if(!firstName.matches("(?i)(^[a-z])((?![ .,'-]$)[a-z .,'-]){0,24}$")) {
-                error = true;
                 errorMessage = "This name is invalid!";
                 errorNum = 1;
             } else if(!lastName.matches("(?i)(^[a-z])((?![ .,'-]$)[a-z .,'-]){0,24}$")) {
-                error = true;
                 errorMessage = "This name is invalid!";
                 errorNum = 2;
             } else if(!Util.passwordIsValid(password)) {
-                error = true;
                 errorMessage = "The password is invalid!";
                 errorNum = 3;
             } else if(!Util.emailIsValid(email)) {
-                error = true;
                 errorMessage = "The email is invalid!";
                 errorNum = 4;
             } else {
                 password = SCryptUtil.scrypt(password, 16384, 8, 1);
 
                 Map<String, String> signUpParams = new HashMap<>();
-                signUpParams.put("firstName", firstName);
-                signUpParams.put("lastName", lastName);
+                signUpParams.put("firstName", firstName.toUpperCase());
+                signUpParams.put("lastName", lastName.toUpperCase());
                 signUpParams.put("exelonId", exelonId);
                 signUpParams.put("email", email);
                 signUpParams.put("password", password);
@@ -74,13 +68,12 @@ public class AuthenticationEndpoint
 
         if(!result) {
             errorNum = 5;
-            error = true;
             errorMessage = "There was an unexpected server error. Please try again.";
         }
 
 
-        if(error) {
-            jsonResp.addProperty("error", true);
+        if(!result) {
+            jsonResp.addProperty("result", false);
             jsonResp.addProperty("errorMessage", errorMessage);
             jsonResp.addProperty("errorNum", errorNum);
         } else {
@@ -114,15 +107,17 @@ public class AuthenticationEndpoint
 
         boolean result = false;
         if(exelonId != null && password != null && os != null && deviceId != null && Util.isInteger(exelonId)) {
-            password = SCryptUtil.scrypt(password, 16384, 8, 1);
+            String hashed = DatabaseConnection.Login(exelonId.trim());
 
-            result = DatabaseConnection.Login(exelonId, password);
+            if(hashed != null) {
+                result = SCryptUtil.check(password, hashed);
+            }
 
             if(result) {
                 if(os == OperatingSystem.iOS) {
-                    MobileNotificationService.RegisteriOS(deviceId);
+                    MobileNotificationService.RegisteriOS(deviceId.trim(), exelonId.trim());
                 } else if(os == OperatingSystem.Android) {
-                    MobileNotificationService.RegisterAndroid(deviceId);
+                    MobileNotificationService.RegisterAndroid(deviceId.trim(), exelonId.trim());
                 }
             }
         }

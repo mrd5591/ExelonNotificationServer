@@ -57,20 +57,22 @@ public class DatabaseConnection {
         }
     }
 
-    public static boolean Login(String exelonId, String password) {
+    public static String Login(String exelonId) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
-            String sql = "SELECT 1 FROM users WHERE exelon_id = ? AND pword = ?";
+            String sql = "SELECT TOP 1 pword FROM users WHERE exelon_id = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, exelonId);
-            statement.setString(2, password);
             ResultSet rs = statement.executeQuery();
 
-            return rs.next();
+            if(rs.next())
+                return rs.getString("pword");
         }
         catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return null;
         }
+
+        return null;
     }
 
     public static ResultSet GetAccountHistory(String exelonId, String token) {
@@ -116,8 +118,10 @@ public class DatabaseConnection {
                     notification = new EverbridgeNotification(notificationId, rs.getString("msg"), rs.getLong("t_stamp"));
             }
 
-            notification.SetExelonIds(exelonIds);
-            notification.SetDeviceIds(GetUserOS(exelonIds));
+            if(notification != null) {
+                notification.SetExelonIds(exelonIds);
+                notification.SetDeviceIds(GetUserOS(exelonIds));
+            }
 
             return notification;
         }
@@ -132,7 +136,7 @@ public class DatabaseConnection {
         try (Connection connection = DriverManager.getConnection(connectionUrl)) {
             String ids = "?,".repeat(exelonIds.size());
             ids = ids.substring(0, ids.length()-1);
-            String sql = "SELECT * FROM users WHERE exelon_id IN " + ids;
+            String sql = "SELECT * FROM users WHERE exelon_id IN (" + ids + ")";
             PreparedStatement statement = connection.prepareStatement(sql);
             for(int i = 0; i < exelonIds.size(); i++) {
                 statement.setString(i + 1, exelonIds.get(i));
@@ -193,7 +197,6 @@ public class DatabaseConnection {
             params = params.substring(0, params.length()-1);
 
             String sql = "IF NOT EXISTS (SELECT * FROM notifications WHERE EB_n_id = ?) INSERT INTO notifications (EB_n_id, t_stamp, exelon_id, resp_outstanding, msg) VALUES " + params;
-            //String sql = "IF NOT EXISTS (SELECT * FROM notifications WHERE EB_n_id = ?) INSERT INTO notifications (EB_n_id, t_stamp, exelon_id, resp_outstanding, msg) VALUES (1, 1, 123456, 2, \'test\')";
             PreparedStatement statement = connection.prepareStatement(sql);
 
             statement.setString(1, notificationId);
@@ -202,7 +205,7 @@ public class DatabaseConnection {
 
             int rows = statement.executeUpdate();
 
-            return rows != 0;
+            return rows != -1;
         }
         catch (SQLException e) {
             e.printStackTrace();

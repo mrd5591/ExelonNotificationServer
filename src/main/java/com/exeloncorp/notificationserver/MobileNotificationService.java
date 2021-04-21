@@ -15,31 +15,31 @@ public class MobileNotificationService
     }
 
     public static boolean SendFCM(String data, Set<String> userIds) {
-        String message = "{\"data\":{\"msg\":" + data + " }}";
+        String message = "{\"data\":{\"msg\": \"" + data + "\" }}";
         Notification n = Notification.createFcmNotification(message);
-
+        NotificationOutcome outcome;
         Set<String> tags = new HashSet<>();
         for(String user : userIds) {
-            tags.add("$UserId:" + user);
+            tags.add("$UserId:{" + user + "}");
         }
 
         try {
-            hub.sendNotification(n, tags);
+            outcome = hub.sendNotification(n, tags);
         } catch (NotificationHubsException e) {
             e.printStackTrace();
             return false;
         }
-
+        System.out.println(outcome);
         return true;
     }
 
     public static boolean SendAPN(String data, Set<String> userIds) {
-        String alert = "{\"aps\":{\"alert\": " + data + " }}";
+        String alert = "{\"aps\":{\"alert\": \"" + data + "\" }}";
         Notification n = Notification.createAppleNotification(alert);
 
         Set<String> tags = new HashSet<>();
         for(String user : userIds) {
-            tags.add("$UserId:" + user);
+            tags.add("$UserId:{" + user + "}");
         }
 
         try {
@@ -52,10 +52,12 @@ public class MobileNotificationService
         return true;
     }
 
-    public static boolean RegisteriOS(String deviceToken) {
-        AppleRegistration reg = new AppleRegistration(deviceToken);
+    public static boolean RegisteriOS(String deviceToken, String exelonId) {
+        Installation installation = new Installation(deviceToken, NotificationPlatform.Apns, deviceToken);
+        installation.setUserId(exelonId);
+
         try {
-            hub.createRegistration(reg);
+            hub.createOrUpdateInstallation(installation);
         } catch (NotificationHubsException e) {
             e.printStackTrace();
             return false;
@@ -64,10 +66,12 @@ public class MobileNotificationService
         return true;
     }
 
-    public static boolean RegisterAndroid(String deviceToken) {
-        FcmRegistration reg = new FcmRegistration(deviceToken);
+    public static boolean RegisterAndroid(String deviceToken, String exelonId) {
+        Installation installation = new Installation(deviceToken, NotificationPlatform.Gcm, deviceToken);
+        installation.setUserId(exelonId);
+
         try {
-            hub.createRegistration(reg);
+            hub.createOrUpdateInstallation(installation);
         } catch (NotificationHubsException e) {
             e.printStackTrace();
             return false;
