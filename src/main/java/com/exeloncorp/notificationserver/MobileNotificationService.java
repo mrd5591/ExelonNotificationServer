@@ -1,8 +1,11 @@
 package com.exeloncorp.notificationserver;
 
+import com.google.appengine.repackaged.com.google.gson.JsonObject;
 import com.windowsazure.messaging.*;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 public class MobileNotificationService
@@ -15,21 +18,25 @@ public class MobileNotificationService
     }
 
     public static boolean SendFCM(String data, Set<String> userIds) {
-        String message = "{\"data\":{\"msg\": \"" + data + "\" }}";
-        Notification n = Notification.createFcmNotification(message);
-        NotificationOutcome outcome;
+        JsonObject message = new JsonObject();
+        JsonObject body = new JsonObject();
+        body.addProperty("title", "Everbridge Alert");
+        body.addProperty("body", data);
+        message.add("notification", body);
+
+        Notification n = Notification.createFcmNotification(message.toString());
         Set<String> tags = new HashSet<>();
         for(String user : userIds) {
             tags.add("$UserId:{" + user + "}");
         }
 
         try {
-            outcome = hub.sendNotification(n, tags);
+            hub.sendNotification(n, tags);
         } catch (NotificationHubsException e) {
             e.printStackTrace();
             return false;
         }
-        System.out.println(outcome);
+
         return true;
     }
 
@@ -66,8 +73,8 @@ public class MobileNotificationService
         return true;
     }
 
-    public static boolean RegisterAndroid(String deviceToken, String exelonId) {
-        Installation installation = new Installation(deviceToken, NotificationPlatform.Gcm, deviceToken);
+    public static boolean RegisterAndroid(String deviceToken, String exelonId, String pnsToken) {
+        Installation installation = new Installation(deviceToken, NotificationPlatform.Gcm, pnsToken);
         installation.setUserId(exelonId);
 
         try {

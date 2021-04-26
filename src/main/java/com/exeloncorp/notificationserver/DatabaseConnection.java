@@ -215,8 +215,9 @@ public class DatabaseConnection {
 
     public static boolean DecrementPNCount(String notificationId) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
-            String sql = "UPDATE notifications SET resp_outstanding = resp_outstanding - 1 WHERE EB_n_id = " + notificationId;
+            String sql = "UPDATE notifications SET resp_outstanding = resp_outstanding - 1 WHERE EB_n_id = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, notificationId);
 
             statement.executeUpdate();
 
@@ -230,8 +231,25 @@ public class DatabaseConnection {
 
     public static boolean ConfirmNotification(String exelonId, String notificationId) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
-            String sql = "UPDATE notifications SET resp_outstanding = 0 WHERE EB_n_id = " + notificationId + " AND exelon_id = " + exelonId;
+            String sql = "UPDATE notifications SET resp_outstanding = 0 WHERE EB_n_id = ? AND exelon_id = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, notificationId);
+            statement.setString(2, exelonId);
+
+            return statement.executeUpdate() == 1;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean InsertToken(String token, String exelonId) {
+        try (Connection connection = DriverManager.getConnection(connectionUrl);) {
+            String sql = "UPDATE users SET token = ? WHERE exelon_id = ?";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, token);
+            statement.setString(2, exelonId);
 
             return statement.executeUpdate() == 1;
         }

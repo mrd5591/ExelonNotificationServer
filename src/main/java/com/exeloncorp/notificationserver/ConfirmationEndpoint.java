@@ -11,25 +11,21 @@ import javax.ws.rs.core.Response;
 import java.util.Date;
 import java.util.HashMap;
 
-@Path("/confirm")
+@Path("/confirm/{notificationId}")
 public class ConfirmationEndpoint
 {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response ConfirmNotification(@HeaderParam("Bearer") String token, String json) {
-        HashMap<String, String> params = new Gson().fromJson(json, new TypeToken<HashMap<String, String>>(){}.getType());
-
-        String notificiationId = params.get("notificationId");
-
+    public Response ConfirmNotification(@HeaderParam("Bearer") String token, @PathParam("notificationId") String notificationId) {
         JsonObject jsonResp = new JsonObject();
 
         boolean result = false;
-        if(token != null && notificiationId != null) {
+        if(token != null && notificationId != null) {
             String exelonId = DatabaseConnection.GetUserFromToken(token);
 
             if(exelonId != null) {
-                result = DatabaseConnection.ConfirmNotification(exelonId, notificiationId);
+                result = DatabaseConnection.ConfirmNotification(exelonId, notificationId);
             }
         }
 

@@ -95,6 +95,7 @@ public class AuthenticationEndpoint
         String exelonId = params.get("exelonId");
         String password = params.get("password");
         String deviceId = params.get("deviceId");
+        String pnsToken = params.get("pnsToken");
         OperatingSystem os;
         try {
             os = OperatingSystem.valueOf(params.get("os"));
@@ -106,7 +107,8 @@ public class AuthenticationEndpoint
         JsonObject jsonResp = new JsonObject();
 
         boolean result = false;
-        if(exelonId != null && password != null && os != null && deviceId != null && Util.isInteger(exelonId)) {
+        String token = null;
+        if(exelonId != null && password != null && os != null && deviceId != null && pnsToken != null && Util.isInteger(exelonId)) {
             String hashed = DatabaseConnection.Login(exelonId.trim());
 
             if(hashed != null) {
@@ -114,15 +116,20 @@ public class AuthenticationEndpoint
             }
 
             if(result) {
-                if(os == OperatingSystem.iOS) {
-                    MobileNotificationService.RegisteriOS(deviceId.trim(), exelonId.trim());
-                } else if(os == OperatingSystem.Android) {
-                    MobileNotificationService.RegisterAndroid(deviceId.trim(), exelonId.trim());
+                token = Util.generateNewToken();
+
+                if(token != null && DatabaseConnection.InsertToken(token, exelonId)) {
+                    if(os == OperatingSystem.iOS) {
+                        MobileNotificationService.RegisteriOS(deviceId.trim(), exelonId.trim());
+                    } else if(os == OperatingSystem.Android) {
+                        MobileNotificationService.RegisterAndroid(deviceId.trim(), exelonId.trim(), pnsToken.trim());
+                    }
                 }
             }
         }
 
         jsonResp.addProperty("result", result);
+        jsonResp.addProperty("token", token);
 
         return Response.status(200).expires(new Date(System.currentTimeMillis() + 10000)).type(MediaType.APPLICATION_JSON).entity(jsonResp.toString()).build();
     }
