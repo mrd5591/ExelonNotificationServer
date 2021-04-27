@@ -14,33 +14,42 @@ import java.util.Date;
 public class HistoryEndpoint {
     @GET
     @Produces
-    public Response GetHistory(@HeaderParam("Bearer") String token, @PathParam("exelonId") String exelonId) {
+    public Response GetHistory(@HeaderParam("Authorization") String token, @PathParam("exelonId") String exelonId) {
+
+        if(token == null)
+            return Response.status(401).build();
+
+        String type = null;
+        String value = null;
+
+        String[] tokenArr = token.split(" ");
+
+        if(tokenArr.length == 2 && tokenArr[0].equals("Bearer")) {
+            type = "Bearer";
+            value = tokenArr[1];
+        }
+
         JsonObject jsonResp = new JsonObject();
         JsonArray arr = new JsonArray();
         boolean result = false;
-        if(exelonId != null || token != null) {
-            ResultSet rs = DatabaseConnection.GetAccountHistory(exelonId, token);
+        if(exelonId != null && type != null && value != null) {
+            ResultSet rs = DatabaseConnection.GetAccountHistory(exelonId, value);
 
             if(rs != null) {
                 result = true;
 
-                while(true) {
-                    try {
-                        if (rs.next()) {
-                            JsonObject obj = new JsonObject();
-                            obj.addProperty("notificationId", rs.getString("EB_n_id"));
-                            obj.addProperty("message", rs.getString("msg"));
-                            obj.addProperty("timestamp", rs.getString("t_stamp"));
-                            obj.addProperty("confirm", rs.getByte("resp_outstanding"));
-                            arr.add(obj);
-                        } else {
-                            break;
-                        }
-                    } catch (SQLException throwables) {
-                        throwables.printStackTrace();
-                        result = false;
-                        break;
+                try {
+                    while (rs.next()) {
+                        JsonObject obj = new JsonObject();
+                        obj.addProperty("notificationId", rs.getString("EB_n_id"));
+                        obj.addProperty("message", rs.getString("msg"));
+                        obj.addProperty("timestamp", rs.getString("t_stamp"));
+                        obj.addProperty("confirm", rs.getByte("resp_outstanding"));
+                        arr.add(obj);
                     }
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                    result = false;
                 }
             } else {
                 result = false;
