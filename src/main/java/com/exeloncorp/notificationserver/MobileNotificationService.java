@@ -3,9 +3,7 @@ package com.exeloncorp.notificationserver;
 import com.google.appengine.repackaged.com.google.gson.JsonObject;
 import com.windowsazure.messaging.*;
 
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 public class MobileNotificationService

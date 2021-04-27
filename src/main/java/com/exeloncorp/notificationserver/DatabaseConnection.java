@@ -246,7 +246,7 @@ public class DatabaseConnection {
 
     public static boolean InsertToken(String token, String exelonId) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
-            String sql = "UPDATE users SET token = ? WHERE exelon_id = ?";
+            String sql = "UPDATE users SET login_token = ? WHERE exelon_id = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, token);
             statement.setString(2, exelonId);

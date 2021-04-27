@@ -30,13 +30,22 @@ public class AuthenticationEndpoint
         String firstName = params.get("firstName");
         String lastName = params.get("lastName");
         String password = params.get("password");
+        String deviceId = params.get("deviceId");
+        String pnsToken = params.get("pnsToken");
+        OperatingSystem os;
+        try {
+            os = OperatingSystem.valueOf(params.get("os"));
+        } catch (IllegalArgumentException e) {
+            os = null;
+        }
 
         JsonObject jsonResp = new JsonObject();
 
         boolean result = false;
         String errorMessage = "";
         int errorNum = -1;
-        if(exelonId != null && email != null && firstName != null && lastName != null && password != null) {
+        String token = null;
+        if(exelonId != null && email != null && firstName != null && lastName != null && password != null && deviceId != null && pnsToken != null && os != null) {
             if(!exelonId.matches("[0-9]+") || exelonId.length() != 6) {
                 errorMessage = "The employee ID format is incorrect! It must be 6 numbers.";
                 errorNum = 0;
@@ -63,12 +72,16 @@ public class AuthenticationEndpoint
                 signUpParams.put("password", password);
 
                 result = DatabaseConnection.SignUp(signUpParams);
-            }
-        }
 
-        if(!result) {
-            errorNum = 5;
-            errorMessage = "There was an unexpected server error. Please try again.";
+                if(!result) {
+                    errorNum = 5;
+                    errorMessage = "There was an unexpected server error. Please try again.";
+                } else {
+                    Response loginResponse = Login(json);
+                    params = new Gson().fromJson(loginResponse.getEntity().toString(), new TypeToken<HashMap<String, String>>(){}.getType());
+                    token = params.get("token");
+                }
+            }
         }
 
 
@@ -78,6 +91,7 @@ public class AuthenticationEndpoint
             jsonResp.addProperty("errorNum", errorNum);
         } else {
             jsonResp.addProperty("result", true);
+            jsonResp.addProperty("token", token);
         }
 
         return Response.status(200).expires(new Date(System.currentTimeMillis() + 10000)).type(MediaType.APPLICATION_JSON).entity(jsonResp.toString()).build();
