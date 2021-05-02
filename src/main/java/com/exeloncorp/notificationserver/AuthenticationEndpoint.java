@@ -33,9 +33,13 @@ public class AuthenticationEndpoint
         String deviceId = params.get("deviceId");
         String pnsToken = params.get("pnsToken");
         OperatingSystem os;
-        try {
-            os = OperatingSystem.valueOf(params.get("os"));
-        } catch (IllegalArgumentException e) {
+        if(params.get("os") != null) {
+            try {
+                os = OperatingSystem.valueOf(params.get("os"));
+            } catch (IllegalArgumentException e) {
+                os = null;
+            }
+        } else {
             os = null;
         }
 
@@ -71,20 +75,23 @@ public class AuthenticationEndpoint
                 signUpParams.put("email", email);
                 signUpParams.put("password", password);
 
-                result = DatabaseConnection.SignUp(signUpParams);
+                int res = DatabaseConnection.SignUp(signUpParams);
 
-                if(!result) {
-                    errorNum = 5;
+                if(res == 2) {
+                    errorNum = 6;
                     errorMessage = "There was an unexpected server error. Please try again.";
+                } else if(res == 1) {
+                    errorNum = 5;
+                    errorMessage = "This exelonId is already registered.";
                 } else {
+                    result = true;
                     Response loginResponse = Login(json);
                     params = new Gson().fromJson(loginResponse.getEntity().toString(), new TypeToken<HashMap<String, String>>(){}.getType());
                     token = params.get("token");
                 }
             }
         }
-
-
+        
         if(!result) {
             jsonResp.addProperty("result", false);
             jsonResp.addProperty("errorMessage", errorMessage);

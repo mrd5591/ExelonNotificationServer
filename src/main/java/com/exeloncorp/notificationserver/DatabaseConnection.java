@@ -1,5 +1,8 @@
 package com.exeloncorp.notificationserver;
 
+import com.google.appengine.repackaged.com.google.gson.JsonArray;
+import com.google.appengine.repackaged.com.google.gson.JsonObject;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,10 +20,10 @@ public class DatabaseConnection {
         }
     }
 
-    public static boolean SignUp(Map<String, String> params) {
+    public static int SignUp(Map<String, String> params) {
 
         if(CheckAccountExists(params.get("exelonId"))) {
-            return false;
+            return 1;
         }
 
         try (Connection connection = DriverManager.getConnection(connectionUrl)) {
@@ -34,11 +37,11 @@ public class DatabaseConnection {
             statement.setString(6, params.get("password"));
             statement.executeUpdate();
 
-            return true;
+            return 0;
         }
         catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return 2;
         }
     }
 
@@ -75,9 +78,9 @@ public class DatabaseConnection {
         return null;
     }
 
-    public static ResultSet GetAccountHistory(String exelonId, String token) {
+    public static JsonArray GetAccountHistory(String exelonId, String token) {
         try (Connection connection = DriverManager.getConnection(connectionUrl);) {
-            String sql = "SELECT 1 FROM users WHERE exelon_id = ? AND token = ?";
+            String sql = "SELECT TOP 1 * FROM users WHERE exelon_id = ? AND login_token = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, exelonId);
             statement.setString(2, token);
@@ -87,9 +90,19 @@ public class DatabaseConnection {
                 sql = "SELECT * FROM notifications WHERE exelon_id = ?";
                 statement = connection.prepareStatement(sql);
                 statement.setString(1, exelonId);
-                rs = statement.executeQuery();
+                ResultSet notifs = statement.executeQuery();
 
-                return rs;
+                JsonArray arr = new JsonArray();
+                while (notifs.next()) {
+                    JsonObject obj = new JsonObject();
+                    obj.addProperty("message", notifs.getString("msg"));
+                    obj.addProperty("notificationId", notifs.getString("EB_n_id"));
+                    obj.addProperty("timestamp", notifs.getString("t_stamp"));
+                    obj.addProperty("confirm", notifs.getByte("resp_outstanding"));
+                    arr.add(obj);
+                }
+
+                return arr;
             }
         }
         catch (SQLException e) {

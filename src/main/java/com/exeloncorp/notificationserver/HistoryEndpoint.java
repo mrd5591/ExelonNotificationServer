@@ -33,24 +33,10 @@ public class HistoryEndpoint {
         JsonArray arr = new JsonArray();
         boolean result = false;
         if(exelonId != null && type != null && value != null) {
-            ResultSet rs = DatabaseConnection.GetAccountHistory(exelonId, value);
+            arr = DatabaseConnection.GetAccountHistory(exelonId, value);
 
-            if(rs != null) {
+            if(arr != null) {
                 result = true;
-
-                try {
-                    while (rs.next()) {
-                        JsonObject obj = new JsonObject();
-                        obj.addProperty("notificationId", rs.getString("EB_n_id"));
-                        obj.addProperty("message", rs.getString("msg"));
-                        obj.addProperty("timestamp", rs.getString("t_stamp"));
-                        obj.addProperty("confirm", rs.getByte("resp_outstanding"));
-                        arr.add(obj);
-                    }
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                    result = false;
-                }
             } else {
                 result = false;
             }
