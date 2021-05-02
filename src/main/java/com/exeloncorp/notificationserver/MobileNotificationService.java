@@ -57,8 +57,8 @@ public class MobileNotificationService
         return true;
     }
 
-    public static boolean RegisteriOS(String deviceToken, String exelonId) {
-        Installation installation = new Installation(deviceToken, NotificationPlatform.Apns, deviceToken);
+    public static boolean RegisteriOS(String deviceToken, String exelonId, String pnsToken) {
+        Installation installation = new Installation(deviceToken, NotificationPlatform.Apns, pnsToken);
         installation.setUserId(exelonId);
 
         try {

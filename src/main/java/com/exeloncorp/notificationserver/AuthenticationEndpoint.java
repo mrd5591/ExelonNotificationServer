@@ -91,7 +91,7 @@ public class AuthenticationEndpoint
                 }
             }
         }
-        
+
         if(!result) {
             jsonResp.addProperty("result", false);
             jsonResp.addProperty("errorMessage", errorMessage);
@@ -141,7 +141,7 @@ public class AuthenticationEndpoint
 
                 if(token != null && DatabaseConnection.InsertToken(token, exelonId)) {
                     if(os == OperatingSystem.iOS) {
-                        MobileNotificationService.RegisteriOS(deviceId.trim(), exelonId.trim());
+                        MobileNotificationService.RegisteriOS(deviceId.trim(), exelonId.trim(), pnsToken.trim());
                     } else if(os == OperatingSystem.Android) {
                         MobileNotificationService.RegisterAndroid(deviceId.trim(), exelonId.trim(), pnsToken.trim());
                     }
