@@ -39,8 +39,12 @@ public class MobileNotificationService
     }
 
     public static boolean SendAPN(String data, Set<String> userIds) {
-        String alert = "{\"aps\":{\"alert\": \"" + data + "\" }}";
-        Notification n = Notification.createAppleNotification(alert);
+        JsonObject message = new JsonObject();
+        JsonObject body = new JsonObject();
+        body.addProperty("alert", data);
+        message.add("aps", body);
+
+        Notification n = Notification.createAppleNotification(message.toString());
 
         Set<String> tags = new HashSet<>();
         for(String user : userIds) {
